@@ -1,0 +1,7 @@
+body { font-family: system-ui, sans-serif; max-width: 36rem; margin: 2rem auto; padding: 0 1rem; }
+form { display: grid; gap: 0.75rem; }
+input[type=text], input[type=email], textarea { padding: 0.4rem; font: inherit; }
+.wiztchta { padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; }
+.wiztchta [data-state=solved] .wiztchta-status { color: green; }
+.wiztchta [data-state=error] .wiztchta-status { color: crimson; }
+.ok { color: green; } .error { color: crimson; }
