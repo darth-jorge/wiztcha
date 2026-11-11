@@ -23,6 +23,10 @@ defmodule WiztchtaTest do
       "42" |> :erlang.term_to_binary() |> binary_part(1, 7) |> then(&refute(decoded =~ &1))
     end
 
+    test "defaults to proof of work" do
+      assert %Wiztchta.Challenge{type: Wiztchta.Challenges.ProofOfWork} = Wiztchta.new()
+    end
+
     test "raises without a secret" do
       assert_raise ArgumentError, ~r/needs a secret/, fn ->
         Wiztchta.new(type: FixedChallenge, secret_key_base: nil, endpoint: nil)
