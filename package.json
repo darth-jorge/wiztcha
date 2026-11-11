@@ -1,0 +1,10 @@
+{
+  "name": "wiztchta",
+  "version": "0.1.0",
+  "description": "Browser runtime for the Wiztchta Elixir package",
+  "license": "MIT",
+  "type": "module",
+  "main": "./priv/static/wiztchta.js",
+  "module": "./priv/static/wiztchta.js",
+  "files": ["priv/static/wiztchta.js"]
+}
