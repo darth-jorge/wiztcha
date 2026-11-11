@@ -22,7 +22,7 @@ third-party service.
 
 ```elixir
 # mix.exs
-{:wiztchta, github: "OWNER/wiztchta"}
+{:wiztchta, github: "darth-jorge/wiztchta"}
 ```
 
 ```elixir
@@ -37,13 +37,13 @@ import Wiztchta.Components
 
 ```js
 // assets/js/app.js (Phoenix's esbuild config already resolves packages in deps/)
-import { Hooks as WiztchtaHooks, init as initWiztchta } from "wiztchta"
+import { Hooks as WiztchtaHooks, init as initWiztchta } from "wiztchta";
 
 const liveSocket = new LiveSocket("/live", Socket, {
   hooks: { ...colocatedHooks, ...WiztchtaHooks },
   // ...
-})
-initWiztchta() // only needed for forms rendered by controllers
+});
+initWiztchta(); // only needed for forms rendered by controllers
 ```
 
 Proof-of-work uses `crypto.subtle`, so it needs HTTPS (or localhost).
