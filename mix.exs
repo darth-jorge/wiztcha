@@ -48,7 +48,8 @@ defmodule Wiztchta.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      files: ~w(lib priv/static/wiztchta.js package.json mix.exs README.md .formatter.exs),
+      files:
+        ~w(lib priv/static/wiztchta.js package.json mix.exs README.md LICENSE .formatter.exs),
       links: %{}
     ]
   end

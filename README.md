@@ -123,3 +123,7 @@ mix test
 mix dev        # demo app at http://localhost:4000 (LiveView + controller forms)
 mix precommit
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE).
