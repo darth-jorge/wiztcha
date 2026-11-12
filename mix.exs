@@ -2,7 +2,7 @@ defmodule Wiztchta.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @source_url "https://github.com/darth-jorge/wiztcha"
+  @source_url "https://github.com/darth-jorge/wiztchta"
 
   def project do
     [

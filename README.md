@@ -1,5 +1,9 @@
 # Wiztchta
 
+[![Hex.pm](https://img.shields.io/hexpm/v/wiztchta.svg)](https://hex.pm/packages/wiztchta)
+[![Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/wiztchta)
+[![License](https://img.shields.io/hexpm/l/wiztchta.svg)](LICENSE)
+
 Drop-in, pluggable CAPTCHA for Phoenix forms and LiveViews. No database, no
 third-party service.
 

@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Repository moved to https://github.com/darth-jorge/wiztchta (package links and docs source links updated).
+
 ## [0.1.0] - 2026-11-12
 
 ### Added
@@ -14,3 +20,6 @@ All notable changes to this project are documented here. The format follows
 - `Wiztchta.Store` behaviour for replay protection, with an in-memory ETS default.
 - `Wiztchta.Plug` for verifying submissions in controller actions.
 - Browser runtime (`import { Hooks, init } from "wiztchta"`) with a LiveView hook.
+
+[Unreleased]: https://github.com/darth-jorge/wiztchta/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/darth-jorge/wiztchta/releases/tag/v0.1.0
