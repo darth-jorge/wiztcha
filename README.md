@@ -22,7 +22,7 @@ third-party service.
 
 ```elixir
 # mix.exs
-{:wiztchta, github: "darth-jorge/wiztchta"}
+{:wiztchta, "~> 0.1"}
 ```
 
 ```elixir

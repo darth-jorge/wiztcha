@@ -2,6 +2,7 @@ defmodule Wiztchta.MixProject do
   use Mix.Project
 
   @version "0.1.0"
+  @source_url "https://github.com/darth-jorge/wiztcha"
 
   def project do
     [
@@ -14,7 +15,12 @@ defmodule Wiztchta.MixProject do
       deps: deps(),
       package: package(),
       description: "Drop-in, pluggable CAPTCHA components for Phoenix forms and LiveViews.",
-      docs: [main: "readme", extras: ["README.md"]]
+      source_url: @source_url,
+      docs: [
+        main: "readme",
+        source_ref: "v#{@version}",
+        extras: ["README.md", "CHANGELOG.md", "LICENSE"]
+      ]
     ]
   end
 
@@ -37,8 +43,8 @@ defmodule Wiztchta.MixProject do
       {:phoenix_live_view, "~> 1.1"},
       {:plug, "~> 1.16"},
       {:plug_crypto, "~> 2.0"},
-      {:jason, "~> 1.2"},
       # Only for running the dev.exs demo app.
+      {:jason, "~> 1.2", only: [:dev, :test]},
       {:bandit, "~> 1.5", only: :dev},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}
@@ -49,8 +55,8 @@ defmodule Wiztchta.MixProject do
     [
       licenses: ["MIT"],
       files:
-        ~w(lib priv/static/wiztchta.js package.json mix.exs README.md LICENSE .formatter.exs),
-      links: %{}
+        ~w(lib priv/static/wiztchta.js package.json mix.exs README.md CHANGELOG.md LICENSE .formatter.exs),
+      links: %{"GitHub" => @source_url, "Changelog" => "#{@source_url}/blob/main/CHANGELOG.md"}
     ]
   end
 
