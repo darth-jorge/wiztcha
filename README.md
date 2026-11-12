@@ -18,6 +18,8 @@ third-party service.
 - **Proof-of-work** (default): the browser solves a small SHA-256 puzzle in
   about a second, invisibly. **Math**: "What is 3 + 4?", which works without JS.
   You can also add your own type with the `Wiztchta.Challenge` behaviour.
+- **Honeypot**: a hidden trap field that people never see but naive bots
+  fill in. It's added automatically, with no friction for real users.
 - **Stateless**: each challenge travels as an encrypted, expiring token.
 - **Replay protection**: each token can only be used once. Used tokens are
   remembered in ETS by default, or in your own `Wiztchta.Store`.
@@ -92,6 +94,28 @@ def create(conn, params) do
 end
 ```
 
+## Honeypot
+
+Every `<.wiztchta>` also renders a trap field, `wiztchta[website]`. It's a
+normal text input moved off-screen, so people never see it and bots that fill
+in every input do. `verify/2` checks it first and returns `{:error, :honeypot}`
+if it was filled, without touching the token.
+
+Consider pretending a caught bot succeeded instead of showing an error, so it
+doesn't learn what gave it away:
+
+```elixir
+case Wiztchta.verify(params) do
+  :ok -> save(params)
+  {:error, :honeypot} -> :discard   # respond as if it worked
+  {:error, reason} -> show_error(Wiztchta.error_message(reason))
+end
+```
+
+The field is hidden with an inline style. If your Content Security Policy
+blocks inline styles, hide it in your CSS instead:
+`.wiztchta-hp { position: absolute; left: -10000px; }`.
+
 ## Configuration
 
 ```elixir
@@ -101,7 +125,9 @@ config :wiztchta,
   pow_difficulty: 16,               # each +1 doubles the work
   max_age: 300,                     # seconds a challenge stays valid
   store: Wiztchta.Store.ETS,        # nil disables replay protection
-  param: "wiztchta"                 # form param name
+  param: "wiztchta",                # form param name
+  honeypot: true,                   # false disables the trap field
+  honeypot_field: "website"         # trap field name
 ```
 
 You can pass any of these per call too, for example
@@ -114,7 +140,7 @@ prevent that.
 
 ## Styling
 
-The markup uses plain classes (`wiztchta`, `wiztchta-pow`, `wiztchta-status`,
+The markup uses plain classes (`wiztchta`, `wiztchta-hp`, `wiztchta-pow`, `wiztchta-status`,
 `wiztchta-math`, `wiztchta-label`, `wiztchta-input`), and proof-of-work exposes
 `data-state="pending|solving|solved|error"`. Pass `class` to the component to
 add your own.

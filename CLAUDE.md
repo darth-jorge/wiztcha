@@ -16,7 +16,7 @@ Wiztchta is a **Hex/Mix library** (not a Phoenix app) that host Phoenix projects
 
 ## Architecture
 
-Request flow: `Wiztchta.new/1` asks a challenge module for `{public, secret}` and then encrypts `%{id, type, secret, expires_at}` into a token (`Wiztchta.Token`, `Plug.Crypto.encrypt`). It encrypts rather than signs so answers like the math result stay hidden. The component renders the hidden `wiztchta[token]` input and delegates the challenge UI to `type.render/1`, which must submit `wiztchta[response]`. `Wiztchta.verify/2` decrypts the token, **consumes it in the store before checking the answer** (this stops retrying the same token), then calls `type.valid?/3`.
+Request flow: `Wiztchta.new/1` asks a challenge module for `{public, secret}` and then encrypts `%{id, type, secret, expires_at}` into a token (`Wiztchta.Token`, `Plug.Crypto.encrypt`). It encrypts rather than signs so answers like the math result stay hidden. The component renders the hidden `wiztchta[token]` input and delegates the challenge UI to `type.render/1`, which must submit `wiztchta[response]`. `Wiztchta.verify/2` first rejects a filled `Wiztchta.Honeypot` field (rendered by the component, checked before any token work), then decrypts the token, **consumes it in the store before checking the answer** (this stops retrying the same token), then calls `type.valid?/3`.
 
 - `Wiztchta.Config`: every setting is resolved per call opts → app env → defaults. Secret comes from `:secret_key_base` or `:endpoint`.
 - `Wiztchta.Challenge`: behaviour (`generate/1`, `valid?/3`, `render/1`) and the `%Challenge{type, token, public}` struct. Built-ins live in `lib/wiztchta/challenges/`: `ProofOfWork` (default) and `Math`.

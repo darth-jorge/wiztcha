@@ -91,8 +91,34 @@ defmodule WiztchtaTest do
     end
   end
 
+  describe "verify/2 honeypot" do
+    defp with_honeypot(params, value), do: put_in(params, ["wiztchta", "website"], value)
+
+    test "rejects a filled honeypot even with a correct answer" do
+      params = submit(Wiztchta.new(type: FixedChallenge), "42") |> with_honeypot("spam")
+      assert {:error, :honeypot} = Wiztchta.verify(params)
+    end
+
+    test "checks the honeypot before consuming the token" do
+      challenge = Wiztchta.new(type: FixedChallenge)
+      assert {:error, :honeypot} = Wiztchta.verify(submit(challenge, "42") |> with_honeypot("x"))
+      assert :ok = Wiztchta.verify(submit(challenge, "42"))
+    end
+
+    test "accepts an empty honeypot, and forms rendered without one" do
+      params = submit(Wiztchta.new(type: FixedChallenge), "42") |> with_honeypot("")
+      assert :ok = Wiztchta.verify(params)
+      assert :ok = Wiztchta.verify(submit(Wiztchta.new(type: FixedChallenge), "42"))
+    end
+
+    test "can be disabled per call" do
+      params = submit(Wiztchta.new(type: FixedChallenge), "42") |> with_honeypot("x")
+      assert :ok = Wiztchta.verify(params, honeypot: false)
+    end
+  end
+
   test "error_message/1 covers every error" do
-    for reason <- [:missing, :invalid_token, :expired, :already_used, :wrong_answer] do
+    for reason <- [:missing, :honeypot, :invalid_token, :expired, :already_used, :wrong_answer] do
       assert is_binary(Wiztchta.error_message(reason))
     end
   end

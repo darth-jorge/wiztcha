@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Honeypot trap field, rendered by `<.wiztchta>` and checked first by `Wiztchta.verify/2`,
+  which returns the new `{:error, :honeypot}`. Enabled by default; configure with
+  `:honeypot` and `:honeypot_field`. Forms rendered without the field still verify.
+
 ### Changed
 
 - Repository moved to https://github.com/darth-jorge/wiztchta (package links and docs source links updated).

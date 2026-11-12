@@ -38,6 +38,24 @@ defmodule Wiztchta.ComponentsTest do
     assert count(doc, "#contact-captcha-response[name='captcha[response]']") == 1
   end
 
+  test "renders an off-screen honeypot people and assistive tech skip" do
+    doc = render_doc(type: Math)
+
+    assert attr(doc, "#wiztchta-hp", "name") == "wiztchta[website]"
+    assert attr(doc, "#wiztchta-hp", "type") == "text"
+    assert attr(doc, "#wiztchta-hp", "tabindex") == "-1"
+    assert attr(doc, "#wiztchta-hp", "autocomplete") == "off"
+    assert attr(doc, ".wiztchta-hp", "aria-hidden") == "true"
+    assert attr(doc, ".wiztchta-hp", "style") =~ "left:-10000px"
+  end
+
+  test "honours honeypot options" do
+    assert count(render_doc(type: Math, opts: [honeypot: false]), ".wiztchta-hp") == 0
+
+    doc = render_doc(type: Math, name: "captcha", opts: [honeypot_field: "url"])
+    assert attr(doc, "#wiztchta-hp", "name") == "captcha[url]"
+  end
+
   test "rendered token verifies" do
     doc = render_doc(type: Wiztchta.Test.FixedChallenge)
     token = attr(doc, "#wiztchta-token", "value")
