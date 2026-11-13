@@ -20,6 +20,8 @@ third-party service.
   You can also add your own type with the `Wiztchta.Challenge` behaviour.
 - **Honeypot**: a hidden trap field that people never see but naive bots
   fill in. It's added automatically, with no friction for real users.
+- **Minimum fill time**: forms submitted faster than a person could fill
+  them in (2 seconds by default) are rejected.
 - **Stateless**: each challenge travels as an encrypted, expiring token.
 - **Replay protection**: each token can only be used once. Used tokens are
   remembered in ETS by default, or in your own `Wiztchta.Store`.
@@ -34,6 +36,9 @@ third-party service.
 ```elixir
 # config/config.exs
 config :wiztchta, endpoint: MyAppWeb.Endpoint
+
+# config/test.exs (tests submit instantly; see "Minimum fill time")
+config :wiztchta, min_time: 0
 ```
 
 ```elixir
@@ -116,6 +121,23 @@ The field is hidden with an inline style. If your Content Security Policy
 blocks inline styles, hide it in your CSS instead:
 `.wiztchta-hp { position: absolute; left: -10000px; }`.
 
+## Minimum fill time
+
+When a challenge is created, its issue time goes inside the encrypted token,
+so it can't be forged. Submissions that arrive less than `min_time` seconds
+later return `{:error, :too_fast}`, and the token is not used up, so the
+person can simply submit again.
+
+- In LiveViews the clock starts when the challenge is assigned (at mount and
+  after each submit).
+- For login forms, where password managers fill everything in at once,
+  disable it: `<.wiztchta opts={[min_time: 0]} />` and
+  `Wiztchta.verify(params, min_time: 0)`.
+- Set `config :wiztchta, min_time: 0` in `config/test.exs`, or your tests'
+  form submissions will fail with `:too_fast`.
+- With several servers, their clocks should be in sync (NTP), since the token
+  may be issued on one node and verified on another.
+
 ## Configuration
 
 ```elixir
@@ -127,7 +149,8 @@ config :wiztchta,
   store: Wiztchta.Store.ETS,        # nil disables replay protection
   param: "wiztchta",                # form param name
   honeypot: true,                   # false disables the trap field
-  honeypot_field: "website"         # trap field name
+  honeypot_field: "website",        # trap field name
+  min_time: 2                       # seconds; 0 disables the minimum fill time
 ```
 
 You can pass any of these per call too, for example

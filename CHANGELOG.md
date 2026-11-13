@@ -11,6 +11,16 @@ All notable changes to this project are documented here. The format follows
 - Honeypot trap field, rendered by `<.wiztchta>` and checked first by `Wiztchta.verify/2`,
   which returns the new `{:error, :honeypot}`. Enabled by default; configure with
   `:honeypot` and `:honeypot_field`. Forms rendered without the field still verify.
+- Minimum fill time: `Wiztchta.verify/2` returns `{:error, :too_fast}` for submissions
+  made less than `:min_time` seconds (default `2`) after the challenge was created. The
+  issue time is stored in the encrypted token; too-fast attempts don't consume it.
+
+### Upgrade notes
+
+- Set `config :wiztchta, min_time: 0` in `config/test.exs`; tests submit forms
+  instantly and would otherwise get `{:error, :too_fast}`.
+- Consider `min_time: 0` for login forms, which password managers fill instantly.
+- Tokens issued by 0.1.x have no issue time and skip the minimum fill time check.
 
 ### Changed
 

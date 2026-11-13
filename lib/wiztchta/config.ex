@@ -7,7 +7,8 @@ defmodule Wiztchta.Config do
     store: Wiztchta.Store.ETS,
     param: "wiztchta",
     honeypot: true,
-    honeypot_field: "website"
+    honeypot_field: "website",
+    min_time: 2
   ]
 
   @doc "Reads `key` from per-call opts, then app env, then defaults."

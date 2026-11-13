@@ -117,8 +117,72 @@ defmodule WiztchtaTest do
     end
   end
 
+  describe "verify/2 minimum fill time" do
+    # Builds a token directly so tests can control issued_at without sleeping.
+    defp token_issued(ms_ago) do
+      payload = %{
+        id: "min-time-" <> Integer.to_string(System.unique_integer([:positive])),
+        type: FixedChallenge,
+        secret: "42",
+        expires_at: System.system_time(:second) + 300
+      }
+
+      payload =
+        if ms_ago,
+          do: Map.put(payload, :issued_at, System.system_time(:millisecond) - ms_ago),
+          else: payload
+
+      %Wiztchta.Challenge{
+        type: FixedChallenge,
+        public: %{},
+        token: Wiztchta.Token.encrypt(payload, 300, [])
+      }
+    end
+
+    test "rejects submissions faster than min_time" do
+      assert {:error, :too_fast} = Wiztchta.verify(submit(token_issued(500), "42"), min_time: 2)
+    end
+
+    test "accepts submissions after min_time" do
+      assert :ok = Wiztchta.verify(submit(token_issued(5_000), "42"), min_time: 2)
+    end
+
+    test "new/1 records the issue time" do
+      challenge = Wiztchta.new(type: FixedChallenge)
+      assert {:error, :too_fast} = Wiztchta.verify(submit(challenge, "42"), min_time: 60)
+    end
+
+    test "a too-fast attempt does not consume the token" do
+      challenge = token_issued(0)
+      assert {:error, :too_fast} = Wiztchta.verify(submit(challenge, "42"), min_time: 60)
+      assert :ok = Wiztchta.verify(submit(challenge, "42"), min_time: 0)
+    end
+
+    test "is checked before the answer, so it reveals nothing about it" do
+      assert {:error, :too_fast} = Wiztchta.verify(submit(token_issued(0), "wrong"), min_time: 60)
+    end
+
+    test "skips tokens issued before issued_at existed" do
+      assert :ok = Wiztchta.verify(submit(token_issued(nil), "42"), min_time: 60)
+    end
+
+    test "is disabled by 0, nil or false" do
+      for off <- [0, nil, false] do
+        assert :ok = Wiztchta.verify(submit(token_issued(0), "42"), min_time: off)
+      end
+    end
+  end
+
   test "error_message/1 covers every error" do
-    for reason <- [:missing, :honeypot, :invalid_token, :expired, :already_used, :wrong_answer] do
+    for reason <- [
+          :missing,
+          :honeypot,
+          :too_fast,
+          :invalid_token,
+          :expired,
+          :already_used,
+          :wrong_answer
+        ] do
       assert is_binary(Wiztchta.error_message(reason))
     end
   end
