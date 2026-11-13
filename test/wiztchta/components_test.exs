@@ -27,6 +27,9 @@ defmodule Wiztchta.ComponentsTest do
     assert attr(doc, "#wiztchta-pow", "data-salt") == challenge.public["salt"]
     assert attr(doc, "#wiztchta-pow", "data-difficulty") == "9"
     assert attr(doc, "#wiztchta-pow-state", "phx-update") == "ignore"
+    # data-state must live on a child: LiveView rewrites an ignored container's data-*.
+    assert attr(doc, "#wiztchta-pow-state", "data-state") == nil
+    assert attr(doc, "#wiztchta-pow-state > [data-state]", "data-state") == "pending"
     assert attr(doc, "#wiztchta-response", "name") == "wiztchta[response]"
   end
 

@@ -63,7 +63,14 @@ defmodule Wiztchta.MixProject do
   defp aliases do
     [
       dev: "run --no-halt dev.exs",
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      "test.js": "cmd node --test test/js/",
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "test",
+        "test.js"
+      ]
     ]
   end
 end
