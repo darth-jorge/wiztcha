@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "description": "Browser runtime for the Wiztchta Elixir package",
   "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/darth-jorge/wiztchta.git" },
+  "homepage": "https://hexdocs.pm/wiztchta",
   "type": "module",
   "main": "./priv/static/wiztchta.js",
   "module": "./priv/static/wiztchta.js",

@@ -20,15 +20,24 @@ defmodule Wiztchta do
         default_challenge: Wiztchta.Challenges.ProofOfWork,
         max_age: 300,
         store: Wiztchta.Store.ETS,
-        param: "wiztchta"
+        param: "wiztchta",
+        honeypot: true,
+        honeypot_field: "website",
+        min_time: 2
 
   Every option can also be passed per call to `new/1` and `verify/2`.
   """
 
-  alias Wiztchta.{Challenge, Config, Token}
+  alias Wiztchta.{Challenge, Config, Honeypot, Token}
 
   @type error ::
-          :missing | :invalid_token | :expired | :already_used | :wrong_answer
+          :missing
+          | :honeypot
+          | :invalid_token
+          | :expired
+          | :too_fast
+          | :already_used
+          | :wrong_answer
 
   @doc """
   Generates a new challenge.
@@ -51,6 +60,7 @@ defmodule Wiztchta do
       id: Base.url_encode64(:crypto.strong_rand_bytes(16), padding: false),
       type: type,
       secret: secret,
+      issued_at: System.system_time(:millisecond),
       expires_at: System.system_time(:second) + max_age
     }
 
@@ -63,8 +73,20 @@ defmodule Wiztchta do
   Accepts the full form params (looking under the `:param` key, `"wiztchta"`
   by default) or the inner `%{"token" => ..., "response" => ...}` map.
 
-  A token is consumed on its first verification attempt, whether the answer
-  is right or wrong, so render a fresh challenge after every submit.
+  Checks run cheapest first: the `Wiztchta.Honeypot` field, then the token
+  (decrypt and expiry), then the minimum fill time, then single use, then
+  the challenge answer. A token is consumed on its first verification attempt
+  that reaches the store, whether the answer is right or wrong, so render a
+  fresh challenge after every submit.
+
+  ## Minimum fill time
+
+  Submissions that arrive less than `:min_time` seconds (default `2`) after
+  the challenge was created return `{:error, :too_fast}`: no person fills a
+  form that quickly. The start time lives inside the encrypted token, so it
+  can't be forged, and a too-fast attempt doesn't consume the token. Set
+  `min_time: 0` to disable it, e.g. for login forms filled by password
+  managers, and in your test environment.
 
       case Wiztchta.verify(params) do
         :ok -> ...
@@ -73,8 +95,11 @@ defmodule Wiztchta do
   """
   @spec verify(map, keyword) :: :ok | {:error, error}
   def verify(params, opts \\ []) do
-    with {:ok, token, response} <- extract(params, Config.get(:param, opts)),
+    with {:ok, fields} <- fields(params, Config.get(:param, opts)),
+         :ok <- Honeypot.check(fields, opts),
+         {:ok, token, response} <- token_and_response(fields),
          {:ok, payload} <- Token.decrypt(token, opts),
+         :ok <- check_min_time(payload, opts),
          :ok <- consume(payload, opts) do
       if payload.type.valid?(payload.secret, response, opts),
         do: :ok,
@@ -90,25 +115,42 @@ defmodule Wiztchta do
   @spec error_message(error) :: String.t()
   def error_message(:missing), do: "Please complete the verification."
   def error_message(:expired), do: "The verification expired. Please try again."
+  def error_message(:too_fast), do: "That was quick! Please wait a moment and try again."
   def error_message(:already_used), do: "The verification was already used. Please try again."
   def error_message(:wrong_answer), do: "The verification answer was incorrect. Please try again."
   def error_message(_), do: "The verification failed. Please try again."
 
-  defp extract(%{"token" => token} = params, _param) when is_binary(token) and token != "" do
-    case Map.get(params, "response") do
-      response when is_binary(response) and response != "" -> {:ok, token, response}
-      _ -> {:error, :missing}
-    end
-  end
+  # Accepts either the full form params or the inner Wiztchta map.
+  defp fields(%{"token" => _} = fields, _param), do: {:ok, fields}
 
-  defp extract(params, param) when is_map(params) do
+  defp fields(params, param) when is_map(params) do
     case Map.get(params, param) do
-      %{"token" => _} = inner -> extract(inner, nil)
+      %{} = fields -> {:ok, fields}
       _ -> {:error, :missing}
     end
   end
 
-  defp extract(_params, _param), do: {:error, :missing}
+  defp fields(_params, _param), do: {:error, :missing}
+
+  defp token_and_response(%{"token" => token, "response" => response})
+       when is_binary(token) and token != "" and is_binary(response) and response != "",
+       do: {:ok, token, response}
+
+  defp token_and_response(_fields), do: {:error, :missing}
+
+  # Tokens issued before 0.2.0 have no issued_at; let them through.
+  defp check_min_time(%{issued_at: issued_at}, opts) when is_integer(issued_at) do
+    case Config.get(:min_time, opts) do
+      min_time when is_number(min_time) and min_time > 0 ->
+        elapsed_ms = System.system_time(:millisecond) - issued_at
+        if elapsed_ms < min_time * 1000, do: {:error, :too_fast}, else: :ok
+
+      _disabled ->
+        :ok
+    end
+  end
+
+  defp check_min_time(_payload, _opts), do: :ok
 
   defp consume(payload, opts) do
     case Config.get(:store, opts) do
