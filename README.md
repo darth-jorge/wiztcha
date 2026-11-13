@@ -15,8 +15,9 @@ third-party service.
 </.form>
 ```
 
-- **Proof-of-work** (default): the browser solves a small SHA-256 puzzle in
-  about a second, invisibly. **Math**: "What is 3 + 4?", which works without JS.
+- **Proof-of-work** (default): the browser solves a small SHA-256 puzzle
+  invisibly while the person fills in the form. The form can't be submitted
+  until it's solved. **Math**: "What is 3 + 4?", which works without JS.
   You can also add your own type with the `Wiztchta.Challenge` behaviour.
 - **Honeypot**: a hidden trap field that people never see but naive bots
   fill in. It's added automatically, with no friction for real users.
@@ -121,6 +122,35 @@ The field is hidden with an inline style. If your Content Security Policy
 blocks inline styles, hide it in your CSS instead:
 `.wiztchta-hp { position: absolute; left: -10000px; }`.
 
+## Proof-of-work difficulty
+
+The puzzle starts solving as soon as the form renders, and the form's submit
+buttons stay disabled (and submits blocked) until it's done. Any solving time
+shorter than the time a person spends filling in the form is invisible to them.
+
+Solving times measured with the bundled solver (in Node, on a desktop machine).
+Phones are typically several times slower, and individual solves vary a lot
+around the average:
+
+| `difficulty` | average | slowest of 15 runs |
+|---|---|---|
+| 14 | 0.07 s | 0.3 s |
+| 16 (default) | 0.2 s | 0.7 s |
+| 17 | 0.5 s | 1.3 s |
+| 18 | 1.3 s | 3.6 s |
+
+Keep the default on quick forms (login, newsletter). Raise it on long forms,
+where solving finishes before the person does anyway:
+
+```heex
+<.wiztchta challenge={@challenge} />  <%!-- with Wiztchta.new(difficulty: 18) --%>
+<.wiztchta opts={[difficulty: 18]} />  <%!-- when generated on render --%>
+```
+
+Difficulty can't close the gap with bots that hash natively (several times
+faster than a browser), so it works best alongside the honeypot and minimum
+fill time.
+
 ## Minimum fill time
 
 When a challenge is created, its issue time goes inside the encrypted token,
@@ -144,7 +174,7 @@ person can simply submit again.
 config :wiztchta,
   endpoint: MyAppWeb.Endpoint,      # or secret_key_base: "..."
   default_challenge: Wiztchta.Challenges.ProofOfWork,
-  pow_difficulty: 16,               # each +1 doubles the work
+  pow_difficulty: 16,               # 1..32, each +1 doubles the work
   max_age: 300,                     # seconds a challenge stays valid
   store: Wiztchta.Store.ETS,        # nil disables replay protection
   param: "wiztchta",                # form param name
@@ -165,14 +195,16 @@ prevent that.
 
 The markup uses plain classes (`wiztchta`, `wiztchta-hp`, `wiztchta-pow`, `wiztchta-status`,
 `wiztchta-math`, `wiztchta-label`, `wiztchta-input`), and proof-of-work exposes
-`data-state="pending|solving|solved|error"`. Pass `class` to the component to
-add your own.
+`data-state="pending|solving|solved|error"` on `.wiztchta-pow-box`. While a
+challenge is solving, the form's submit buttons are disabled and marked with
+`data-wiztchta-disabled`. Pass `class` to the component to add your own.
 
 ## Development
 
 ```sh
 mix deps.get
-mix test
+mix test       # Elixir tests
+mix test.js    # JS tests (Node 18+, no npm install needed)
 mix dev        # demo app at http://localhost:4000 (LiveView + controller forms)
 mix precommit
 ```

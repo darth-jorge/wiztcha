@@ -14,6 +14,16 @@ All notable changes to this project are documented here. The format follows
 - Minimum fill time: `Wiztchta.verify/2` returns `{:error, :too_fast}` for submissions
   made less than `:min_time` seconds (default `2`) after the challenge was created. The
   issue time is stored in the encrypted token; too-fast attempts don't consume it.
+- Submit guard: forms can't be submitted while their proof-of-work is still solving.
+  Submit buttons are disabled (`data-wiztchta-disabled`) and submit events are blocked
+  before LiveView or the browser handle them; Enter in a text field is covered too.
+- The proof-of-work `:difficulty` is validated (integer 1–32); README documents
+  measured solving times to help choose it per form.
+
+### Fixed
+
+- The proof-of-work `data-state` no longer resets to `pending` when LiveView
+  re-renders the component; it now lives on `.wiztchta-pow-box`.
 
 ### Upgrade notes
 
@@ -21,6 +31,8 @@ All notable changes to this project are documented here. The format follows
   instantly and would otherwise get `{:error, :too_fast}`.
 - Consider `min_time: 0` for login forms, which password managers fill instantly.
 - Tokens issued by 0.1.x have no issue time and skip the minimum fill time check.
+- CSS targeting `data-state` should use `.wiztchta-pow-box[data-state=...]`
+  (descendant selectors such as `.wiztchta [data-state=solved]` keep working).
 
 ### Changed
 

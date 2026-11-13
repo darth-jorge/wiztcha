@@ -27,6 +27,14 @@ defmodule Wiztchta.Challenges.ProofOfWorkTest do
     refute ProofOfWork.valid?(secret, nil, [])
   end
 
+  test "generate/1 rejects difficulties outside 1..32" do
+    for bad <- [0, 33, 160, -1, 16.0, "16", nil] do
+      assert_raise ArgumentError, ~r/from 1 to 32/, fn ->
+        ProofOfWork.generate(difficulty: bad)
+      end
+    end
+  end
+
   test "round-trips through Wiztchta.verify/2" do
     challenge = Wiztchta.new(type: ProofOfWork, difficulty: 8)
     nonce = solve(challenge.public["salt"], 8)

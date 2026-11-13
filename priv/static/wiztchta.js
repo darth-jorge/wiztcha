@@ -42,6 +42,81 @@ function setState(el, state, message) {
   if (status && message) status.textContent = message
 }
 
+// --- Submit guard ------------------------------------------------------------
+//
+// While a challenge is being solved its form must not be submitted. Two layers:
+//
+// 1. A capture-phase "submit" listener on document blocks the submission. It
+//    runs before LiveView's (bubbling, on window) and before native
+//    submission, and also catches Enter in a text field.
+// 2. The form's submit buttons are disabled as a visual cue. LiveView may
+//    re-render a button and drop `disabled`; layer 1 still holds.
+//
+// Pending challenges are tracked in memory (element -> its form), not in DOM
+// attributes that LiveView patches could overwrite. The form is remembered
+// because a destroyed hook's element is already detached from it.
+
+const pending = new Map()
+const LOCK_ATTR = "data-wiztchta-disabled"
+let guardInstalled = false
+
+function submitButtons(form) {
+  return Array.from(form.elements).filter(
+    (el) =>
+      (el.tagName === "BUTTON" && el.type === "submit") ||
+      (el.tagName === "INPUT" && (el.type === "submit" || el.type === "image")),
+  )
+}
+
+function pendingIn(form) {
+  return Array.from(pending)
+    .filter(([el, elForm]) => elForm === form && el.isConnected)
+    .map(([el]) => el)
+}
+
+function installGuard() {
+  if (guardInstalled) return
+  guardInstalled = true
+  document.addEventListener(
+    "submit",
+    (e) => {
+      const blocking = e.target instanceof HTMLFormElement ? pendingIn(e.target) : []
+      if (blocking.length === 0) return
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      blocking.forEach((el) => setState(el, "solving", "Almost done, still verifying…"))
+    },
+    true,
+  )
+}
+
+function lock(el) {
+  const form = el.closest("form")
+  pending.set(el, form)
+  installGuard()
+  if (!form) return
+  submitButtons(form)
+    .filter((button) => !button.disabled)
+    .forEach((button) => {
+      button.disabled = true
+      button.setAttribute(LOCK_ATTR, "")
+    })
+}
+
+function unlock(el) {
+  const form = pending.has(el) ? pending.get(el) : el.closest("form")
+  pending.delete(el)
+  if (!form || pendingIn(form).length > 0) return
+  submitButtons(form)
+    .filter((button) => button.hasAttribute(LOCK_ATTR))
+    .forEach((button) => {
+      button.disabled = false
+      button.removeAttribute(LOCK_ATTR)
+    })
+}
+
+// --- Lifecycle ---------------------------------------------------------------
+
 // Starts solving the proof-of-work challenge rendered in `el` (no-op if the
 // same challenge is already being solved).
 export function start(el) {
@@ -58,24 +133,32 @@ export function start(el) {
   input.value = ""
 
   if (!(window.crypto && crypto.subtle)) {
+    // Don't trap the user behind a disabled form; the server rejects the submit.
+    unlock(el)
     setState(el, "error", "Verification requires a secure (HTTPS) connection.")
     return
   }
 
+  lock(el)
   setState(el, "solving", "Verifying you are human…")
   solve(salt, difficulty, { signal: controller.signal })
     .then((nonce) => {
-      if (nonce === null) return
+      if (nonce === null) return // superseded by a newer challenge, which owns the lock
       input.value = nonce
+      unlock(el)
       setState(el, "solved", "Verified ✓")
     })
-    .catch(() => setState(el, "error", "Verification failed. Please reload the page."))
+    .catch(() => {
+      unlock(el)
+      setState(el, "error", "Verification failed. Please reload the page.")
+    })
 }
 
 export function stop(el) {
   const current = running.get(el)
   if (current) current.controller.abort()
   running.delete(el)
+  unlock(el)
 }
 
 // For pages without LiveView. Challenges inside LiveViews are left to the hook.
