@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-13
+
 ### Added
 
 - Honeypot trap field, rendered by `<.wiztchta>` and checked first by `Wiztchta.verify/2`,
@@ -49,5 +51,6 @@ All notable changes to this project are documented here. The format follows
 - `Wiztchta.Plug` for verifying submissions in controller actions.
 - Browser runtime (`import { Hooks, init } from "wiztchta"`) with a LiveView hook.
 
-[Unreleased]: https://github.com/darth-jorge/wiztchta/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/darth-jorge/wiztchta/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/darth-jorge/wiztchta/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/darth-jorge/wiztchta/releases/tag/v0.1.0
